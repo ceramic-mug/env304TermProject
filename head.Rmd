@@ -1,19 +1,54 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "SIRS Model with Vaccination and Spatial Heterogenaity"
+output:
+  html_notebook: default
+  pdf_document: default
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+First, define and encode the parameters according to the following differential equations:
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+$$
+\begin{aligned}
+{dS_p\over dt} & =\mu(S_p+I_p+R+I_s+S_s+V)-\mu S_p - \nu S_p - \beta S_p\sum_{j\in \mathbf{C}}I_{p,j}-\alpha\beta S_p\sum_{j\in \mathbf{C}}I_{s,j} \\
+{dI_p\over dt} & = \beta S_p\sum_{j\in \mathbf{C}}I_{p,j}+\alpha\beta S_p\sum_{j\in \mathbf{C}}I_{s,j}-\mu I_p -\gamma I-p \\
+{dR\over dt} & = \gamma I_p + \gamma I_s - \mu R - \delta R \\
+{dS_s\over dt} & = \delta R + \delta_{vax}V - \mu S_s -\nu S_s - \epsilon\beta S_s\sum_{j\in \mathbf{C}}I_{p,j} -\epsilon\beta\alpha S_s\sum_{j\in\mathbf{C}}I_{s,j} \\
+{dI_s\over dt} & = \epsilon\beta S_s\sum_{j\in \mathbf{C}}I_{p,j} +\epsilon\beta\alpha S_s\sum_{j\in\mathbf{C}}I_{s,j} - \mu I_s - \gamma I_s \\
+{dV\over dt} & = \nu S_p + \nu S_s - \mu V - \delta_{vax}V
+\end{aligned}
+$$
+Where:
 
+- $S_p$: primary susceptible [individuals]
+- $I_p$: primary infected [individuals]
+- $R$: recovered [individuals]
+- $I_s$: secondary susceptible [individuals]
+- $S_s$: secondary infected [individuals]
+- $V$: vaccinated [individuals]
+- $\mu$: birth and death rate [$T^{-1}$]
+- $\beta$: transmission potential [$T^{-1}\text{individual}^{-1}$]
+- $\nu$: vaccination rate [$T^{-1}$]
+- $\gamma$: recovery rate (inverse of duration of infection) [$T^{-1}$]
+- $\delta$: rate of loss of natural immunity (inverse of duration of immunity) [$T^{-1}$]
+- $\delta_{vax}$: rate of loss of vaccine-derived immunity [$T^{-1}$]
+- $\epsilon$: susceptibility factor for secondary susceptible [$\emptyset$]
+- $\alpha$: transmission factor for secondary infected [$\emptyset$]
+- $\mathbf{C}$: set of commuting-related counties [$\{\emptyset\}$]
+
+We can rewrite the model in vector-matrix form:
+
+$$
+{d\over dt}\begin{bmatrix}S_p\\I_p\\R\\S_s\\I_s\\V\end{bmatrix} = \begin{bmatrix}
+-(\beta \sum_{j\in \mathbf{C}}I_{p,j}+\alpha\beta \sum_{j\in \mathbf{C}}I_{s,j}+ \nu) & \mu & \mu & \mu & \mu & \mu \\
+\beta \sum_{j\in \mathbf{C}}I_{p,j}+\alpha\beta \sum_{j\in \mathbf{C}}I_{s,j} & -(\gamma+\mu) & 0 & 0 & 0 & 0\\
+0 & \gamma & -(\mu + \delta) & 0 & \gamma & 0 \\
+0 & 0 & \delta & -(\epsilon\beta \sum_{j\in \mathbf{C}}I_{p,j} +\epsilon\beta\alpha \sum_{j\in\mathbf{C}}I_{s,j}) & 0 & \delta_{vax} \\
+0 & 0 & 0 & \epsilon\beta \sum_{j\in \mathbf{C}}I_{p,j} +\epsilon\beta\alpha \sum_{j\in\mathbf{C}}I_{s,j} & -(\gamma + \mu) & 0\\
+\nu & 0 & 0 & \nu & 0 & -(\delta_{vax}+\mu)
+\end{bmatrix}
+\begin{bmatrix}S_p\\I_p\\R\\S_s\\I_s\\V\end{bmatrix}
+$$
 ```{r}
-plot(cars)
+
+
 ```
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
-
